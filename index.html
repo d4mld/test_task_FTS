@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализ динамики и структуры налоговой задолженности в Российской Федерации (2019–2023 гг.)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f5ff',
+                            100: '#e0ebff',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            900: '#172554',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .dark .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.8);
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-50 glass-card border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                </div>
+                <span class="font-semibold text-sm sm:text-base tracking-tight truncate max-w-xs sm:max-w-md">Анализ налоговой задолженности РФ</span>
+            </div>
+            
+            <nav class="hidden md:flex items-center space-x-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+                <a href="#tables" class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">Таблицы</a>
+                <a href="#charts" class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">Графики</a>
+                <a href="#analytics" class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">Аналитика</a>
+                <a href="#recommendations" class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">Рекомендации</a>
+                <a href="#sources" class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">Источники</a>
+            </nav>
+
+            <div class="flex items-center space-x-3">
+                <button onclick="exportToPDF()" title="Экспорт в PDF" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </button>
+                <button onclick="toggleDarkMode()" id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shadow-sm">
+                    <svg id="sun-icon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    <svg id="moon-icon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 w-full">
+
+        <!-- Title Section -->
+        <section class="text-center space-y-4">
+            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                Анализ динамики и структуры налоговой задолженности в Российской Федерации (2019–2023 гг.)
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto text-sm sm:text-base">
+                Комплексное исследование фискальных показателей, макроэкономических тенденций и эффективности бюджетного администрирования.
+            </p>
+        </section>
+
+        <!-- KPI Cards Grid -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                <div>
+                    <p class="text-xs font-semibold tracking-wider uppercase text-slate-400 dark:text-slate-500">Совокупная задолженность</p>
+                    <p class="text-3xl font-bold mt-2 text-slate-900 dark:text-white">2 530,4 <span class="text-lg font-normal text-slate-500">млрд Р</span></p>
+                </div>
+                <div class="mt-4 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-medium w-fit">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                    <span>рост за период 2019–2023 гг. (+219,5%)</span>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                <div>
+                    <p class="text-xs font-semibold tracking-wider uppercase text-slate-400 dark:text-slate-500">Объем чистой недоимки</p>
+                    <p class="text-3xl font-bold mt-2 text-slate-900 dark:text-white">1 028,9 <span class="text-lg font-normal text-slate-500">млрд Р</span></p>
+                </div>
+                <div class="mt-4 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-xs font-medium w-fit">
+                    <span>40,7% доля в структуре долга</span>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                <div>
+                    <p class="text-xs font-semibold tracking-wider uppercase text-slate-400 dark:text-slate-500">Ключевая налоговая статья</p>
+                    <p class="text-3xl font-bold mt-2 text-slate-900 dark:text-white">1 017,1 <span class="text-lg font-normal text-slate-500">млрд Р</span></p>
+                </div>
+                <div class="mt-4 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 text-xs font-medium w-fit">
+                    <span>40,2% доля НДС в совокупном долге</span>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                <div>
+                    <p class="text-xs font-semibold tracking-wider uppercase text-slate-400 dark:text-slate-500">Уровень урегулирования</p>
+                    <p class="text-3xl font-bold mt-2 text-slate-900 dark:text-white">2,9%</p>
+                </div>
+                <div class="mt-4 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 text-xs font-medium w-fit">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    <span>сокращение доли урегулирования с 21,2%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tables Section (Always Visible) -->
+        <section id="tables" class="glass-card p-6 sm:p-8 rounded-2xl shadow-sm space-y-8">
+            <div class="border-l-4 border-blue-600 pl-4">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Статистическая база исследования</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Исходные официальные показатели по годам и категориям долга</p>
+            </div>
+
+            <!-- Table 1 -->
+            <div class="space-y-3">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">Динамика задолженности по видам налогов и сборов (млрд руб.)</h3>
+                <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+                    <table class="w-full text-sm text-left text-slate-600 dark:text-slate-300">
+                        <thead class="text-xs uppercase bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
+                            <tr>
+                                <th class="px-4 py-3">Вид платежа</th>
+                                <th class="px-4 py-3 text-right">2019 г.</th>
+                                <th class="px-4 py-3 text-right">2020 г.</th>
+                                <th class="px-4 py-3 text-right">2021 г.</th>
+                                <th class="px-4 py-3 text-right">2022 г.</th>
+                                <th class="px-4 py-3 text-right">2023 г.</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800 font-normal">
+                            <tr class="bg-blue-50/50 dark:bg-blue-950/20 font-semibold">
+                                <td class="px-4 py-2.5 text-slate-900 dark:text-white">Совокупная задолженность (всего)</td>
+                                <td class="px-4 py-2.5 text-right">792,0</td>
+                                <td class="px-4 py-2.5 text-right">710,2</td>
+                                <td class="px-4 py-2.5 text-right">1 828,6</td>
+                                <td class="px-4 py-2.5 text-right">1 989,0</td>
+                                <td class="px-4 py-2.5 text-right text-blue-600 dark:text-blue-400">2 530,4</td>
+                            </tr>
+                            <tr class="bg-slate-50/50 dark:bg-slate-900/40 font-semibold">
+                                <td class="px-4 py-2.5 text-slate-900 dark:text-white">1. Федеральные налоги и сборы</td>
+                                <td class="px-4 py-2.5 text-right">410,2</td>
+                                <td class="px-4 py-2.5 text-right">361,2</td>
+                                <td class="px-4 py-2.5 text-right">1 107,5</td>
+                                <td class="px-4 py-2.5 text-right">1 292,6</td>
+                                <td class="px-4 py-2.5 text-right">1 858,1</td>
+                            </tr>
+                            <tr><td class="px-4 py-2 pl-8">— Налог на добавленную стоимость</td><td class="px-4 py-2 text-right">248,8</td><td class="px-4 py-2 text-right">224,8</td><td class="px-4 py-2 text-right">661,1</td><td class="px-4 py-2 text-right">732,3</td><td class="px-4 py-2 text-right">1 017,1</td></tr>
+                            <tr><td class="px-4 py-2 pl-8">— Налог на прибыль организаций</td><td class="px-4 py-2 text-right">83,2</td><td class="px-4 py-2 text-right">67,2</td><td class="px-4 py-2 text-right">218,8</td><td class="px-4 py-2 text-right">320,8</td><td class="px-4 py-2 text-right">469,5</td></tr>
+                            <tr><td class="px-4 py-2 pl-8">— Налог на добычу полезных ископаемых</td><td class="px-4 py-2 text-right">9,2</td><td class="px-4 py-2 text-right">9,1</td><td class="px-4 py-2 text-right">29,2</td><td class="px-4 py-2 text-right">41,4</td><td class="px-4 py-2 text-right">143,7</td></tr>
+                            <tr><td class="px-4 py-2 pl-8">— Акцизы</td><td class="px-4 py-2 text-right">13,7</td><td class="px-4 py-2 text-right">8,7</td><td class="px-4 py-2 text-right">74,5</td><td class="px-4 py-2 text-right">84,7</td><td class="px-4 py-2 text-right">87,8</td></tr>
+                            <tr class="bg-slate-50/50 dark:bg-slate-900/40 font-semibold">
+                                <td class="px-4 py-2.5 text-slate-900 dark:text-white">2. Региональные налоги и сборы</td>
+                                <td class="px-4 py-2.5 text-right">134,8</td><td class="px-4 py-2.5 text-right">121,7</td><td class="px-4 py-2.5 text-right">196,5</td><td class="px-4 py-2.5 text-right">193,1</td><td class="px-4 py-2.5 text-right">191,8</td>
+                            </tr>
+                            <tr class="bg-slate-50/50 dark:bg-slate-900/40 font-semibold">
+                                <td class="px-4 py-2.5 text-slate-900 dark:text-white">3. Местные налоги и сборы</td>
+                                <td class="px-4 py-2.5 text-right">79,8</td><td class="px-4 py-2.5 text-right">75,2</td><td class="px-4 py-2.5 text-right">113,1</td><td class="px-4 py-2.5 text-right">113,2</td><td class="px-4 py-2.5 text-right">115,8</td>
+                            </tr>
+                            <tr class="bg-slate-50/50 dark:bg-slate-900/40 font-semibold">
+                                <td class="px-4 py-2.5 text-slate-900 dark:text-white">4. Специальные налоговые режимы</td>
+                                <td class="px-4 py-2.5 text-right">32,7</td><td class="px-4 py-2.5 text-right">30,1</td><td class="px-4 py-2.5 text-right">45,7</td><td class="px-4 py-2.5 text-right">43,4</td><td class="px-4 py-2.5 text-right">47,3</td>
+                            </tr>
+                            <tr class="bg-slate-50/50 dark:bg-slate-900/40 font-semibold">
+                                <td class="px-4 py-2.5 text-slate-900 dark:text-white">5. Страховые взносы</td>
+                                <td class="px-4 py-2.5 text-right">131,5</td><td class="px-4 py-2.5 text-right">120,0</td><td class="px-4 py-2.5 text-right">360,9</td><td class="px-4 py-2.5 text-right">343,0</td><td class="px-4 py-2.5 text-right">314,7</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Table 2 -->
+            <div class="space-y-3 pt-4">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">Структура задолженности по категориям качества (млрд руб.)</h3>
+                <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+                    <table class="w-full text-sm text-left text-slate-600 dark:text-slate-300">
+                        <thead class="text-xs uppercase bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
+                            <tr>
+                                <th class="px-4 py-3">Категория задолженности</th>
+                                <th class="px-4 py-3 text-right">2019 г.</th>
+                                <th class="px-4 py-3 text-right">2020 г.</th>
+                                <th class="px-4 py-3 text-right">2021 г.</th>
+                                <th class="px-4 py-3 text-right">2022 г.</th>
+                                <th class="px-4 py-3 text-right">2023 г.</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800 font-normal">
+                            <tr class="bg-blue-50/50 dark:bg-blue-950/20 font-semibold">
+                                <td class="px-4 py-2.5 text-slate-900 dark:text-white">Совокупная задолженность (всего)</td>
+                                <td class="px-4 py-2.5 text-right">792,0</td>
+                                <td class="px-4 py-2.5 text-right">710,2</td>
+                                <td class="px-4 py-2.5 text-right">1 828,6</td>
+                                <td class="px-4 py-2.5 text-right">1 989,0</td>
+                                <td class="px-4 py-2.5 text-right text-blue-600 dark:text-blue-400">2 530,4</td>
+                            </tr>
+                            <tr><td class="px-4 py-2 pl-4">— Чистая недоимка</td><td class="px-4 py-2 text-right">599,9</td><td class="px-4 py-2 text-right">535,2</td><td class="px-4 py-2 text-right">502,7</td><td class="px-4 py-2 text-right">702,9</td><td class="px-4 py-2 text-right">1 028,9</td></tr>
+                            <tr><td class="px-4 py-2 pl-4">— Урегулированная задолженность</td><td class="px-4 py-2 text-right">167,9</td><td class="px-4 py-2 text-right">146,8</td><td class="px-4 py-2 text-right">201,8</td><td class="px-4 py-2 text-right">39,5</td><td class="px-4 py-2 text-right">74,0</td></tr>
+                            <tr><td class="px-4 py-2 pl-4">— Прочая / приостановленная задолженность</td><td class="px-4 py-2 text-right">24,2</td><td class="px-4 py-2 text-right">28,2</td><td class="px-4 py-2 text-right">1 124,1</td><td class="px-4 py-2 text-right">1 246,6</td><td class="px-4 py-2 text-right">1 427,5</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section id="charts" class="space-y-8">
+            <div class="flex items-center space-x-3 border-l-4 border-blue-600 pl-4">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Графический анализ</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="glass-card p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Соотношение совокупной задолженности и чистой недоимки (млрд руб.)</h3>
+                    <div class="relative h-72"><canvas id="chart1"></canvas></div>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Факторы формирования прироста задолженности за период 2019–2023 гг.</h3>
+                    <div class="relative h-72"><canvas id="chart2"></canvas></div>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Структура задолженности по видам налогов</h3>
+                    <div class="relative h-72"><canvas id="chart3"></canvas></div>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Динамика доли урегулированной задолженности (%)</h3>
+                    <div class="relative h-72"><canvas id="chart4"></canvas></div>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Распределение задолженности по уровням бюджетной системы (%)</h3>
+                    <div class="relative h-72"><canvas id="chart5"></canvas></div>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Динамика структуры качества задолженности (млрд руб.)</h3>
+                    <div class="relative h-72"><canvas id="chart6"></canvas></div>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 rounded-2xl shadow-sm">
+                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Цепные темпы прироста задолженности (YoY, %)</h3>
+                <div class="relative h-80"><canvas id="chart7"></canvas></div>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analytics" class="space-y-8">
+            <div class="flex items-center space-x-3 border-l-4 border-blue-600 pl-4">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Анализ и интерпретация данных</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white mb-3">1. Ключевые макроэкономические тенденции</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" style="line-height: 1.75;">
+                        Произошла выраженная концентрированная консолидация неисполненных налоговых обязательств на уровне федерального бюджета, где доля федеральных налогов в структуре задолженности увеличилась с 51,8 процента в 2019 году до 73,4 процента в 2023 году, что обусловлено опережающей динамикой накопления долгов по НДС и налогу на прибыль организаций. Одновременно наблюдается качественная трансформация состава обязательств, выраженная в сокращении доли прямой недоимки с 75,7 до 40,7 процента и замещении ее прочей и приостановленной задолженностью, составившей 56,4 процента в 2023 году. Суммарно налог на добавленную стоимость и налог на прибыль организаций формируют 58,8 процента всей задолженности в бюджетную систему Российской Федерации.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white mb-3">2. Факторы динамики и обоснование</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" style="line-height: 1.75;">
+                        Прирост задолженности по НДС на 768,3 миллиарда рублей обусловлен структурной трансформацией логистических цепочек, усложнением трансграничных расчетов и развитием кассовых разрывов у контрагентов в период санкционного давления 2022–2023 годов. Расширение прочей задолженности на 1403,3 миллиарда рублей связано с поэтапным переходом на систему Единого налогового счета, ростом суммы оспариваемых начислений в судебном порядке и действием моратория на процедуры банкротства. Снижение доли урегулированной задолженности с 21,2 до 2,9 процента указывает на исчерпание практической востребованности стандартных механизмов реструктуризации из-за жестких требований к обеспечению.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white mb-3">3. Анализ структурных аномалий</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" style="line-height: 1.75;">
+                        Статистический скачок совокупного показателя в 2021 году на 157,5 процента при одновременном падении чистой недоимки объясняется изменением алгоритмов консолидации данных Федеральной налоговой службы и постановкой на учет ранее не учитывавшихся приостановленных обязательств на сумму более одного триллиона рублей. Аномальный рост задолженности по налогу на добычу полезных ископаемых в 2023 году в 3,5 раза вызван пересмотром коэффициентов расчета налога для добывающих отраслей и результатами контрольных мероприятий в отношении крупнейших налогоплательщиков сырьевого сектора.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white mb-3">4. Приоритетные направления администрирования</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" style="line-height: 1.75;">
+                        Приостановленная и прочая задолженность объемом 1427,5 миллиарда рублей представляет собой ключевой объект повышенного риска, требующий проведения сплошной инвентаризации с целью дифференциации ликвидных требований и своевременного списания безнадежных обязательств. Высокая зависимость корпоративного сектора по налогу на добавленную стоимость от текущего оборотного капитала требует постоянного применения механизмов превентивного налогового мониторинга для предупреждения веерных неплатежей.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommendations Section -->
+        <section id="recommendations" class="space-y-8">
+            <div class="flex items-center space-x-3 border-l-4 border-blue-600 pl-4">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Рекомендации по повышению эффективности взыскания</h2>
+            </div>
+
+            <div class="space-y-6">
+                <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">1. Инвентаризация и скоринг приостановленной задолженности</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" style="line-height: 1.75;">
+                        Предлагается внедрение алгоритмической модели кластеризации приостановленной задолженности по категориям риска на основе вероятности взыскания, потенциала реструктуризации и признаков безнадежности. Экономическое обоснование заключается в концентрации административных ресурсов налоговых органов на потенциально возвратных активах и существенном снижении издержек на сопровождение бесперспективных исполнительных производств. Мера опирается на статистические данные об объеме прочей и приостановленной задолженности, достигшей 1427,5 миллиарда рублей или 56,4 процента совокупного долга, выступая ключевым фактором бюджетной неопределенности.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">2. Развитие превентивного комплаенса по НДС</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" style="line-height: 1.75;">
+                        Целесообразно внедрение модулей раннего информирования о рисках возникновения кассовых разрывов по налогу на добавленную стоимость в цифровых сервисах Личного кабинета налогоплательщика заблаговременно до наступления законодательно установленного срока уплаты. Данный подход позволяет предотвратить формирование недоимки, снижая финансовые издержки бизнеса и государства на принудительное взыскание и блокировку банковских счетов. Предложения опираются на показатели доли НДС, достигшей 40,2 процента при абсолютном приросте более чем на 760 миллиардов рублей за исследуемый период.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">3. Модернизация нормативного института рассрочек</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" style="line-height: 1.75;">
+                        Требуется оптимизация законодательных критериев предоставления налоговых рассрочек, снижения процентных ставок и расширения перечня допустимых видов обеспечения за счет банковских гарантий и поручительств институтов развития. Реализация данной меры обеспечит сохранение текущей платежеспособности добросовестных налогоплательщиков и гарантирует поэтапное поступление средств в бюджет без остановки хозяйственной деятельности предприятий. Необходимо отметить, что актуальность модернизации обусловлена критическим сокращением доли урегулированной задолженности до 2,9 процента, что наглядно подтверждает исчерпание потенциала традиционных инструментов реструктуризации.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">4. Развитие института налоговой медиации по крупнейшим платежам</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" style="line-height: 1.75;">
+                        Необходимо внедрение процедурных механизмов досудебного урегулирования сложных налоговых споров с привлечением независимых экспертов при расчетах налога на добычу полезных ископаемых и налога на прибыль организаций. Это позволит сократить сроки разрешения разногласий с нескольких лет судебных тяжб до нескольких месяцев, существенно ускоряя фактическое поступление денежных средств в бюджетную систему. Предложение опирается на зафиксированный аномальный рост задолженности по налогу на добычу полезных ископаемых в 3,5 раза за 2023 год и значительный прирост по налогу на прибыль, сформированные крупными точечными спорами.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sources Section -->
+        <section id="sources" class="glass-card p-8 rounded-2xl shadow-sm space-y-6">
+            <div class="flex items-center space-x-3 border-l-4 border-blue-600 pl-4">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Источники данных и нормативно-правовая база</h2>
+            </div>
+            
+            <ol class="list-decimal list-inside space-y-4 text-sm text-slate-600 dark:text-slate-300">
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-900 dark:text-white">Доклад «Социально-экономическое положение России» — Росстат</span><br>
+                    <a href="https://rosstat.gov.ru/compendium/document/50801" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">https://rosstat.gov.ru/compendium/document/50801</a><br>
+                    Федеральная служба государственной статистики, официальные данные о динамике совокупной налоговой задолженности, чистой недоимки и распределения обязательств по уровням бюджетной системы Российской Федерации за 2019–2023 годы.
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-900 dark:text-white">Аналитический портал ФНС России</span><br>
+                    <a href="https://analytic.nalog.gov.ru/" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">https://analytic.nalog.gov.ru/</a><br>
+                    Официальные аналитические данные Федеральной налоговой службы о показателях эффективности взыскания, структуре поступлений и состоянии задолженности по субъектам страны.
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-900 dark:text-white">Аналитические материалы Министерства финансов Российской Федерации</span><br>
+                    <a href="https://minfin.gov.ru/ru/performance/ebudget/" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">https://minfin.gov.ru/ru/performance/ebudget/</a><br>
+                    Официальные ежегодные отчеты об исполнении федерального бюджета и нормативных изменениях в сфере налогового администрирования, включая внедрение института Единого налогового счета.
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-900 dark:text-white">Официальные отчеты и заключения Счетной палаты Российской Федерации</span><br>
+                    <a href="https://ach.gov.ru/" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">https://ach.gov.ru/</a><br>
+                    Экспертно-аналитические материалы и заключения Счетной палаты Российской Федерации по вопросам эффективности формирования доходов бюджетов бюджетной системы и контроля за полнотой уплаты налогов.
+                </li>
+                <li class="pl-2">
+                    <span class="font-semibold text-slate-900 dark:text-white">Налоговый кодекс Российской Федерации</span><br>
+                    <a href="https://www.consultant.ru/document/cons_doc_LAW_19671/" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">https://www.consultant.ru/document/cons_doc_LAW_19671/</a><br>
+                    Нормативно-правовая база, регламентирующая порядок исполнения налоговых обязательств, условия предоставления отсрочек и рассрочек, а также применение мер принудительного взыскания.
+                </li>
+            </ol>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-20 border-t border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 py-6 text-center text-sm text-slate-500">
+        <p>© 2026 Аналитический портал фискальных исследований. Все права защищены.</p>
+    </footer>
+
+    <!-- JavaScript for Interactivity & Charts -->
+    <script>
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        function exportToPDF() {
+            window.print();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(226, 232, 240, 0.8)';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = textColor;
+
+            const ctx1 = document.getElementById('chart1').getContext('2d');
+            const gradBlue = ctx1.createLinearGradient(0, 0, 0, 300);
+            gradBlue.addColorStop(0, 'rgba(37, 99, 235, 0.85)');
+            gradBlue.addColorStop(1, 'rgba(37, 99, 235, 0.3)');
+
+            const gradRed = ctx1.createLinearGradient(0, 0, 0, 300);
+            gradRed.addColorStop(0, 'rgba(225, 29, 72, 0.85)');
+            gradRed.addColorStop(1, 'rgba(225, 29, 72, 0.3)');
+
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['2019 г.', '2020 г.', '2021 г.', '2022 г.', '2023 г.'],
+                    datasets: [
+                        { label: 'Совокупная задолженность', data: [792.0, 710.2, 1828.6, 1989.0, 2530.4], backgroundColor: gradBlue, borderRadius: 6 },
+                        { label: 'Чистая недоимка', data: [599.9, 535.2, 502.7, 702.9, 1028.9], backgroundColor: gradRed, borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { tooltip: { mode: 'index', intersect: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: gridColor } }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById('chart2').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['2019 г.', 'НДС', 'Прибыль', 'Взносы', 'НДПИ', 'Прочие', '2023 г.'],
+                    datasets: [{
+                        label: 'Прирост (млрд руб.)',
+                        data: [792.0, 768.3, 386.3, 183.2, 134.5, 266.1, 2530.4],
+                        backgroundColor: ['#2563eb', '#059669', '#059669', '#059669', '#059669', '#059669', '#1e40af'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: gridColor } }
+                    }
+                }
+            });
+
+            const ctx3 = document.getElementById('chart3').getContext('2d');
+            new Chart(ctx3, {
+                type: 'doughnut',
+                data: {
+                    labels: ['НДС: 40,2%', 'Налог на прибыль: 18,6%', 'Страховые взносы: 12,4%', 'НДПИ: 5,7%', 'Имущественные: 7,6%', 'Прочие: 15,5%'],
+                    datasets: [{
+                        data: [40.2, 18.6, 12.4, 5.7, 7.6, 15.5],
+                        backgroundColor: ['#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777', '#64748b'],
+                        borderWidth: 2,
+                        borderColor: isDark ? '#0f172a' : '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } }
+                }
+            });
+
+            const ctx4 = document.getElementById('chart4').getContext('2d');
+            const gradLine = ctx4.createLinearGradient(0, 0, 0, 250);
+            gradLine.addColorStop(0, 'rgba(225, 29, 72, 0.4)');
+            gradLine.addColorStop(1, 'rgba(225, 29, 72, 0.0)');
+
+            new Chart(ctx4, {
+                type: 'line',
+                data: {
+                    labels: ['2019 г.', '2020 г.', '2021 г.', '2022 г.', '2023 г.'],
+                    datasets: [{
+                        label: 'Уровень урегулирования (%)',
+                        data: [21.2, 20.7, 11.0, 2.0, 2.9],
+                        borderColor: '#e11d48',
+                        backgroundColor: gradLine,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: gridColor } }
+                    }
+                }
+            });
+
+            const ctx5 = document.getElementById('chart5').getContext('2d');
+            new Chart(ctx5, {
+                type: 'bar',
+                data: {
+                    labels: ['2019 г.', '2020 г.', '2021 г.', '2022 г.', '2023 г.'],
+                    datasets: [
+                        { label: 'Федеральный бюджет', data: [400, 350, 900, 1000, 1300], backgroundColor: '#1e40af' },
+                        { label: 'Региональные бюджеты', data: [200, 180, 500, 550, 700], backgroundColor: '#059669' },
+                        { label: 'Местные бюджеты', data: [100, 100, 250, 280, 350], backgroundColor: '#d97706' },
+                        { label: 'Внебюджетные фонды', data: [92, 80, 178, 159, 180], backgroundColor: '#7c3aed' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, grid: { color: gridColor } }
+                    }
+                }
+            });
+
+            const ctx6 = document.getElementById('chart6').getContext('2d');
+            new Chart(ctx6, {
+                type: 'bar',
+                data: {
+                    labels: ['2019 г.', '2020 г.', '2021 г.', '2022 г.', '2023 г.'],
+                    datasets: [
+                        { label: 'Чистая недоимка', data: [599.9, 535.2, 502.7, 702.9, 1028.9], backgroundColor: '#b91c1c' },
+                        { label: 'Урегулированная', data: [150, 140, 200, 40, 70], backgroundColor: '#047857' },
+                        { label: 'Прочая и приостановленная', data: [42, 35, 1125.9, 1246.1, 1431.5], backgroundColor: '#64748b' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, grid: { color: gridColor } }
+                    }
+                }
+            });
+
+            const ctx7 = document.getElementById('chart7').getContext('2d');
+            new Chart(ctx7, {
+                type: 'bar',
+                data: {
+                    labels: ['2020 г.', '2021 г.', '2022 г.', '2023 г.'],
+                    datasets: [{
+                        label: 'Прирост YoY (%)',
+                        data: [-10.3, 157.5, 8.8, 27.2],
+                        backgroundColor: function(context) {
+                            const val = context.raw;
+                            return val < 0 ? '#059669' : '#1d4ed8';
+                        },
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: gridColor } }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
